@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+function zerarUso(index) {
+  const macros = JSON.parse(localStorage.getItem('macros')) || [];
+  if (!confirm(`Zerar contador de uso da macro "${macros[index].nome}"?`)) return;
+
+  macros[index].uso = 0;
+  localStorage.setItem('macros', JSON.stringify(macros));
+  loadMacros();
+  mostrarMensagem("Contador de uso zerado!", "info");
+}
+
+function zerarTodosUsos() {
+  if (!confirm("Tem certeza que deseja zerar o contador de todas as macros?")) return;
+
+  const macros = JSON.parse(localStorage.getItem('macros')) || [];
+  macros.forEach(m => m.uso = 0);
+  localStorage.setItem('macros', JSON.stringify(macros));
+  loadMacros();
+  mostrarMensagem("Todos os contadores foram zerados!", "info");
+}
+
+</script>
+  <meta charset="UTF-8">
+  <title>Gerenciador de Macros Completo</title>
+  <style>
+    :root {
+      --bg: #f2f2f2;
+      --fg: #000;
+      --card: #fff;
+    }
+    [data-theme="dark"] {
+      --bg: #121212;
+      --fg: #fff;
+      --card: #1f1f1f;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: var(--bg);
+      color: var(--fg);
+    }
+    form, .macro-list, .toolbar {
+      background-color: var(--card);
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 10px;
+      margin-right: 5px;
+      padding: 8px 12px;
+      background-color: #007BFF;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .macro-item {
+      border-top: 1px solid #ccc;
+      padding: 10px 0;
+    }
+    pre {
+      background-color: #f4f4f4;
+      padding: 10px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
+    .hidden { display: none; }
+    .favorito { color: gold; font-weight: bold; }
+
+    .nome-macro {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #007BFF;
+  display: inline-block;
+  margin-bottom: 5px;
+}
+.favorito .nome-macro {
+  /*color: red;*/
+  color: red; /* Cor dourada */
+  text-shadow: 0 0 10px #d4af34, /* Brilho dourado */
+                0 0 20px #d4af34,
+                0 0 30px #d4af34;
+  animation: pisca 1s infinite; /* Velocidade de pisca e looping */
+}
+
+  @keyframes pisca {
+  0% {
+    opacity: 1; /* Opacidade no início do pisca */
+  }
+  50% {
+    opacity: 0.4; /* Opacidade no meio do pisca */
+  }
+  100% {
+    opacity: 1; /* Opacidade no final do pisca */
+  }
+}
+#mensagemContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.mensagem {
+  background-color: #007BFF;
+  color: #fff;
+  padding: 10px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  margin-bottom: 10px;
+  animation: fadeOut 3s forwards;
+}
+
+.mensagem.erro { background-color: #dc3545; }
+.mensagem.aviso { background-color: #ffc107; color: #000; }
+.mensagem.sucesso { background-color: #28a745; }
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(100%); }
+}
+
+.grade-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.grade-container .macro-item {
+  border: 1px solid #ccc;
+}
+.categoria-link {
+  color: #007BFF;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.categoria-link:hover {
+  color: #0056b3;
+}
+body {
+  font-family: 'Segoe UI', Roboto, sans-serif;
+}
+button {
+  background: linear-gradient(135deg, #007BFF, #0056b3);
+  transition: background 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+button:hover {
+  background: linear-gradient(135deg, #0056b3, #004494);
+  transform: translateY(-1px);
+}
+form, .macro-list, .toolbar {
+  background-color: var(--card);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+.toolbar input[type="file"] {
+  display: none;
+}
+.custom-file {
+  padding: 8px 12px;
+  background-color: #6c757d;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.custom-file:hover {
+  background-color: #5a6268;
+}
+.macro-item {
+  border: 1px solid #e0e0e0;
+  padding: 15px;
+  border-radius: 10px;
+  transition: box-shadow 0.2s ease;
+}
+.macro-item:hover {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+[data-theme="dark"] {
+  --bg: #1c1c1c;
+  --fg: #f2f2f2;
+  --card: #2a2a2a;
+}
+.mensagem {
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  animation: fadeOut 3s ease forwards;
+}
+.macro-item {
+  background-color: var(--card);
+  border: 1px solid transparent;
+  border-radius: 16px;
+  padding: 20px;
+  transition: box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.macro-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+input[type="text"],
+textarea,
+select {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #007BFF;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+button.danger {
+  background: #dc3545;
+}
+button.danger:hover {
+  background: #a71d2a;
+}
+.favorite-btn {
+  background: none;
+  font-size: 20px;
+  color: gold;
+  cursor: pointer;
+}
+.favorite-btn:hover {
+  transform: scale(1.2);
+}
+.mensagem.sucesso {
+  background-color: #d4edda;
+  color: #155724;
+}
+.mensagem.erro {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+.mensagem.info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+.botao-importar {
+  display: inline-block;
+  padding: 8px 12px;
+  background-color: #4caf50;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+  </style>
+</head>
+<body>
+<div id="mensagemContainer"></div>
+
+  <div class="toolbar">
+    <button onclick="toggleTheme()">Alternar Tema</button>
+    <button onclick="exportarJSON()">Exportar JSON</button>
+    <button onclick="exportarTXT()">Exportar TXT</button>
+    <button onclick="exportarPDF()">Exportar PDF</button>
+    <label for="importFile" class="botao-importar">Importar JSON</label>
+    <input type="file" id="importFile" accept=".json" onchange="importarJSON()" style="display:none;">
+<button onclick="mostrarBackups()">Restaurar Backup</button>
+<button onclick="zerarTodosUsos()">Zerar Todos Usos</button>
+
+  </div>
+
+  <form id="macroForm">
+    <h2>Salvar Macro</h2>
+
+    <label for="nome_macro">Nome da Macro:</label>
+    <input type="text" id="nome_macro" required>
+
+    <label for="categoria_macro">Categorias (separadas por vírgula):</label>
+    <input type="text" id="categoria_macro">
+
+    <label for="macro">Macro:</label>
+    <textarea id="macro" rows="6" required></textarea>
+
+    <button type="submit">Salvar Macro</button>
+    <button type="button" id="cancelarEdicao" onclick="cancelarEdicao()">Cancelar Edição</button>
+  </form>
+
+  <div class="macro-list">
+    <h2>Macros Salvas</h2>
+    <label for="busca">Buscar:</label>
+    <input type="text" id="busca" oninput="filtrarMacros()">
+<div id="filtroCategoria" class="hidden">
+  <strong>Filtrando por categoria:</strong> <span id="categoriaAtiva"></span>
+  <button onclick="limparFiltroCategoria()">Remover Filtro</button>
+</div>
+
+
+    <label for="ordem">Ordenar por:</label>
+    <select id="ordem" onchange="loadMacros()">
+      <option value="nome">Nome</option>
+      <option value="data" selected>Data</option>
+      <option value="uso">Uso</option>
+    </select>
+<label for="visualizacao">Visualização:</label>
+<select id="visualizacao" onchange="loadMacros()">
+  <option value="lista">Lista</option>
+  <option value="grade">Grade</option>
+</select>
+
+
+    <div id="macrosContainer"></div>
+  </div>
+
+  <script>
+    let senha = "3628";
+    if (prompt("Digite a senha:") !== senha) {
+      alert("Acesso negado");
+      document.body.innerHTML = "<h1>Bloqueado  -  Errou a senha, solicita com o Thony</h1>";
+    }
+
+    const form = document.getElementById('macroForm');
+    const macrosContainer = document.getElementById('macrosContainer');
+    const cancelarBtn = document.getElementById('cancelarEdicao');
+let filtroCategoria = null;
+    function loadMacros() {
+  const ordem = document.getElementById("ordem").value;
+  let macros = JSON.parse(localStorage.getItem('macros')) || [];
+
+  const visualizacao = document.getElementById("visualizacao")?.value || "lista";
+  macrosContainer.className = visualizacao === "grade" ? "grade-container" : "";
+
+
+  if (ordem === 'nome') macros.sort((a,b) => a.nome.localeCompare(b.nome));
+  if (ordem === 'data') macros.sort((a,b) => new Date(b.data) - new Date(a.data));
+  if (ordem === 'uso') macros.sort((a,b) => (b.uso || 0) - (a.uso || 0));
+
+  const busca = document.getElementById("busca").value.toLowerCase();
+  macrosContainer.innerHTML = '';
+  macros.forEach((macro, index) => {
+    const matchBusca =
+  macro.nome.toLowerCase().includes(busca) ||
+  macro.conteudo.toLowerCase().includes(busca) ||
+  (macro.categorias || "").toLowerCase().includes(busca);
+
+const matchCategoria = !filtroCategoria || (macro.categorias || "").toLowerCase().includes(filtroCategoria.toLowerCase());
+
+if (matchBusca && matchCategoria)
+ {
+      const div = document.createElement('div');
+      div.className = 'macro-item';
+      div.innerHTML = `
+        <div class="${macro.favorito ? 'favorito' : ''}">
+          <span class="nome-macro">${macro.nome}</span>
+        </div>
+<em>${(macro.categorias || '').split(',').map(cat =>
+  cat.trim()).filter(cat => cat).map(cat => `<span class="categoria-link" onclick="filtrarPorCategoria('${cat.trim()}')">${cat.trim()}</span>`
+).join(', ')}</em><br>
+        <strong>Macro:</strong><pre id="macroText${index}">${macro.conteudo}</pre>
+        <div class="macro-actions">
+  <button onclick="copyMacro(${index})">Copiar</button>
+  <button onclick="editMacro(${index})">Editar</button>
+  <button onclick="deleteMacro(${index})">Excluir</button>
+  <button onclick="toggleFavorito(${index})">Favoritar</button>
+  <button onclick="simularMacro(${index})">Simular</button>
+  <button onclick="zerarUso(${index})">Zerar Uso</button>
+  <button onclick="verHistorico(${index})">Histórico</button>
+
+</div>
+
+        <div><small>Usado ${macro.uso || 0}x</small></div>
+        <div><small>Última edição: ${new Date(macro.data).toLocaleString()}</small></div>
+      `;
+      macrosContainer.appendChild(div);
+    }
+  });
+}
+
+    form.addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const nome = document.getElementById('nome_macro').value.trim();
+  const conteudo = document.getElementById('macro').value.trim();
+  const categorias = document.getElementById('categoria_macro').value.trim();
+  const data = new Date().toISOString();
+
+  let macros = JSON.parse(localStorage.getItem('macros')) || [];
+
+  const nomeExiste = macros.some((m, i) => m.nome === nome && i != form.dataset.editingIndex);
+  if (nomeExiste) {
+    alert("Já existe uma macro com esse nome.");
+    return;
+  }
+
+  if (form.dataset.editingIndex !== undefined) {
+    const index = form.dataset.editingIndex;
+    macros[index].historico = macros[index].historico || [];
+    macros[index].historico.push({ nome: macros[index].nome, conteudo: macros[index].conteudo, data: macros[index].data });
+    macros[index] = { ...macros[index], nome, conteudo, categorias, data };
+    delete form.dataset.editingIndex;
+  } else {
+    macros.push({ nome, conteudo, categorias, data });
+  }
+
+  localStorage.setItem('macros', JSON.stringify(macros));
+  criarBackupAutomatico();
+form.reset();
+  loadMacros();
+});
+
+
+    function editMacro(index) {
+      const macros = JSON.parse(localStorage.getItem('macros'));
+      const macro = macros[index];
+      document.getElementById('nome_macro').value = macro.nome;
+      document.getElementById('macro').value = macro.conteudo;
+      document.getElementById('categoria_macro').value = macro.categorias;
+      form.dataset.editingIndex = index;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteMacro(index) {
+      if (!confirm("Tem certeza que deseja excluir esta macro?")) return;
+      const macros = JSON.parse(localStorage.getItem('macros'));
+      macros.splice(index, 1);
+      localStorage.setItem('macros', JSON.stringify(macros));
+      loadMacros();
+    }
+
+    function copyMacro(index) {
+  const macros = JSON.parse(localStorage.getItem('macros')) || [];
+  const text = macros[index].conteudo;
+
+  navigator.clipboard.writeText(text).then(() => {
+    // Atualiza contador
+    macros[index].uso = (macros[index].uso || 0) + 1;
+   // macros[index].data = new Date().toISOString();//
+    localStorage.setItem('macros', JSON.stringify(macros));
+    loadMacros();
+
+    mostrarMensagem("Macro copiada para a área de transferência!", "sucesso");
+  }).catch(err => {
+    alert("Erro ao copiar a macro: " + err);
+  });
+}
+
+    function toggleFavorito(index) {
+      const macros = JSON.parse(localStorage.getItem('macros'));
+      macros[index].favorito = !macros[index].favorito;
+      localStorage.setItem('macros', JSON.stringify(macros));
+      loadMacros();
+    }
+
+    function simularMacro(index) {
+      const macros = JSON.parse(localStorage.getItem('macros'));
+      alert("Simulação da macro:\n\n" + macros[index].conteudo);
+    }
+
+    function filtrarMacros() { loadMacros(); }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.dataset.theme = html.dataset.theme === "dark" ? "light" : "dark";
+    }
+
+    function exportarJSON() {
+      const blob = new Blob([localStorage.getItem('macros')], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'macros.json';
+      a.click();
+    }
+
+    function exportarTXT() {
+      const macros = JSON.parse(localStorage.getItem('macros')) || [];
+      const content = macros.map(m => `${m.nome}\n${m.categorias || ''}\n${m.conteudo}\n---`).join('\n');
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'macros.txt';
+      a.click();
+    }
+
+    async function exportarPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const macros = JSON.parse(localStorage.getItem('macros')) || [];
+
+  let y = 10;
+  macros.forEach((m, i) => {
+    doc.setFontSize(14);
+    doc.text(`${i + 1}. ${m.nome}`, 10, y);
+    y += 7;
+
+    doc.setFontSize(10);
+    if (m.categorias) {
+      doc.text(`Categorias: ${m.categorias}`, 10, y);
+      y += 6;
+    }
+
+    const macroLines = doc.splitTextToSize(m.conteudo, 180);
+    macroLines.forEach(line => {
+      if (y > 280) {
+        doc.addPage();
+        y = 10;
+      }
+      doc.text(line, 10, y);
+      y += 5;
+    });
+
+    y += 10;
+    if (y > 280) {
+      doc.addPage();
+      y = 10;
+    }
+  });
+
+  doc.save("macros.pdf");
+}
+
+
+    function importarJSON() {
+      const file = document.getElementById('importFile').files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dados = JSON.parse(reader.result);
+        localStorage.setItem('macros', JSON.stringify(dados));
+        loadMacros();
+      };
+      reader.readAsText(file);
+    }
+
+    loadMacros();
+      function cancelarEdicao() {
+      form.reset();
+      delete form.dataset.editingIndex;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function mostrarMensagem(texto, tipo = 'sucesso') {
+  const container = document.getElementById('mensagemContainer');
+  const msg = document.createElement('div');
+  msg.className = `mensagem ${tipo}`;
+  msg.textContent = texto;
+  container.appendChild(msg);
+
+  setTimeout(() => {
+    msg.remove();
+  }, 3500);
+}
+
+function verHistorico(index) {
+  const macros = JSON.parse(localStorage.getItem('macros')) || [];
+  const macro = macros[index];
+
+  if (!macro.historico || macro.historico.length === 0) {
+    mostrarMensagem("Nenhuma versão anterior encontrada.", "aviso");
+    return;
+  }
+
+  let historicoHTML = `<h3>Histórico de "${macro.nome}"</h3>`;
+  macro.historico.slice().reverse().forEach((versao, i) => {
+    const id = macro.historico.length - 1 - i;
+    historicoHTML += `
+      <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
+        <strong>Versão ${id + 1} - ${new Date(versao.data).toLocaleString()}</strong><br>
+        <em>${versao.nome}</em><br>
+        <pre>${versao.conteudo}</pre>
+        <button onclick="restaurarVersao(${index}, ${id})">Restaurar esta versão</button>
+      </div>
+    `;
+  });
+
+  const janela = window.open('', '', 'width=700,height=600');
+  janela.document.write(`
+    <html><head><title>Histórico</title></head><body>${historicoHTML}</body></html>
+  `);
+}
+function restaurarVersao(index, id) {
+  const macros = JSON.parse(localStorage.getItem('macros')) || [];
+  const versao = macros[index].historico[id];
+
+  if (!confirm("Tem certeza que deseja restaurar esta versão? Isso salvará como uma nova edição.")) return;
+
+  macros[index].historico.push({ nome: macros[index].nome, conteudo: macros[index].conteudo, data: macros[index].data });
+  macros[index].nome = versao.nome;
+  macros[index].conteudo = versao.conteudo;
+  macros[index].data = new Date().toISOString();
+
+  localStorage.setItem('macros', JSON.stringify(macros));
+  mostrarMensagem("Versão restaurada com sucesso.", "sucesso");
+  loadMacros();
+}
+function filtrarPorCategoria(categoria) {
+  filtroCategoria = categoria;
+  document.getElementById("filtroCategoria").classList.remove("hidden");
+  document.getElementById("categoriaAtiva").textContent = categoria;
+  loadMacros();
+}
+
+function limparFiltroCategoria() {
+  filtroCategoria = null;
+  document.getElementById("filtroCategoria").classList.add("hidden");
+  document.getElementById("categoriaAtiva").textContent = '';
+  loadMacros();
+}
+function criarBackupAutomatico() {
+  const dados = localStorage.getItem('macros');
+  const timestamp = new Date().toISOString();
+  localStorage.setItem(`backup_${timestamp}`, dados);
+  console.log("Backup automático criado:", timestamp);
+}
+function mostrarBackups() {
+  const backupsContainer = document.getElementById("backupsContainer");
+  const listaBackups = document.getElementById("listaBackups");
+  backupsContainer.innerHTML = '';
+
+  const chaves = Object.keys(localStorage).filter(k => k.startsWith("backup_"));
+  if (chaves.length === 0) {
+    backupsContainer.innerHTML = "<p>Nenhum backup encontrado.</p>";
+  } else {
+    chaves.sort().reverse(); // Mostrar os mais recentes primeiro
+    chaves.forEach(chave => {
+      const btn = document.createElement("button");
+      btn.textContent = `Restaurar ${chave}`;
+      btn.onclick = () => {
+        if (confirm(`Restaurar backup de ${chave}? Isso substituirá as macros atuais.`)) {
+          const dados = localStorage.getItem(chave);
+          localStorage.setItem("macros", dados);
+          loadMacros();
+          alert("Backup restaurado com sucesso.");
+        }
+      };
+      backupsContainer.appendChild(btn);
+      backupsContainer.appendChild(document.createElement("br"));
+    });
+  }
+
+  listaBackups.classList.remove("hidden");
+  listaBackups.scrollIntoView({ behavior: 'smooth' });
+}
+function importarJSON() {
+  const fileInput = document.getElementById('importFile');
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    try {
+      const dadosImportados = JSON.parse(event.target.result);
+
+      if (!Array.isArray(dadosImportados)) {
+        mostrarMensagem("Formato inválido. O arquivo deve conter uma lista de macros.", "erro");
+        return;
+      }
+
+      let macrosAtuais = JSON.parse(localStorage.getItem('macros')) || [];
+      const confirmacao = confirm("Deseja sobrescrever as macros existentes ou mesclar?\n\nOK = Sobrescrever\nCancelar = Mesclar");
+
+      if (confirmacao) {
+        macrosAtuais = dadosImportados;
+      } else {
+        // Mesclar e evitar duplicatas pelo nome
+        dadosImportados.forEach(importada => {
+          const existente = macrosAtuais.find(m => m.nome === importada.nome);
+          if (!existente) macrosAtuais.push(importada);
+        });
+      }
+
+      localStorage.setItem('macros', JSON.stringify(macrosAtuais));
+      mostrarMensagem("Macros importadas com sucesso!", "sucesso");
+      loadMacros();
+    } catch (error) {
+      mostrarMensagem("Erro ao importar: " + error.message, "erro");
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+  
+function zerarUso(index) {
+  const macros = JSON.parse(localStorage.getItem('macros')) || [];
+  if (!confirm(`Zerar contador de uso da macro "${macros[index].nome}"?`)) return;
+
+  macros[index].uso = 0;
+  localStorage.setItem('macros', JSON.stringify(macros));
+  loadMacros();
+  mostrarMensagem("Contador de uso zerado!", "info");
+}
+
+function zerarTodosUsos() {
+  if (!confirm("Tem certeza que deseja zerar o contador de todas as macros?")) return;
+
+  const macros = JSON.parse(localStorage.getItem('macros')) || [];
+  macros.forEach(m => m.uso = 0);
+  localStorage.setItem('macros', JSON.stringify(macros));
+  loadMacros();
+  mostrarMensagem("Todos os contadores foram zerados!", "info");
+}
+
+</script>
+
+<div id="listaBackups" class="macro-list hidden">
+  <h2>Backups Disponíveis</h2>
+  <div id="backupsContainer"></div>
+</div>
+
+</body>
+</html>
